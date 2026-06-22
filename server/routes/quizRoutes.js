@@ -1,10 +1,17 @@
 // Handles quiz question retrieval endpoints.
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const { sql, getPool } = require('../config/database');
 
 const router = express.Router();
+const quizLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 60,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false
+});
 
-router.get('/questions', async (req, res) => {
+router.get('/questions', quizLimiter, async (req, res) => {
   const { subject, difficulty } = req.query;
 
   try {

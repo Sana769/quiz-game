@@ -1,10 +1,24 @@
 // Handles score submission and leaderboard endpoints.
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const { sql, getPool } = require('../config/database');
 
 const router = express.Router();
+const scoreWriteLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false
+});
 
-router.post('/', async (req, res) => {
+const scoreReadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 60,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false
+});
+
+router.post('/', scoreWriteLimiter, async (req, res) => {
   const { userId, subject, difficulty, score, totalQuestions } = req.body;
 
   try {
@@ -27,7 +41,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.get('/leaderboard', async (_req, res) => {
+router.get('/leaderboard', scoreReadLimiter, async (_req, res) => {
   try {
     const pool = await getPool();
     const result = await pool.request().query(
